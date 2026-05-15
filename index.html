@@ -9,501 +9,551 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Wild Sleep Navigator</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0b0e0c; --bg2: #131710; --bg3: #1b2118;
-    --accent: #7fd97f; --accent2: #4db86e; --accent-dim: rgba(127,217,127,0.12);
-    --warn: #e8b84b; --danger: #e06060;
-    --text: #ccd8ce; --text2: #6b8070; --text3: #3d5040;
-    --border: rgba(127,217,127,0.1); --border2: rgba(127,217,127,0.25);
-    --font-head: 'Syne', sans-serif; --font-mono: 'DM Mono', monospace;
-    --radius: 12px;
-    --header-h: 56px; --toolbar-h: 64px; --sheet-peek: 80px;
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-top: env(safe-area-inset-top, 0px);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; height: 100dvh; background: var(--bg); color: var(--text); font-family: var(--font-mono); overflow: hidden; touch-action: manipulation; }
+:root {
+  --bg: #0b0e0c; --bg2: #131710; --bg3: #1b2118;
+  --accent: #7fd97f; --accent2: #4db86e; --accent-dim: rgba(127,217,127,0.12);
+  --warn: #e8b84b; --danger: #e06060;
+  --text: #ccd8ce; --text2: #6b8070; --text3: #3d5040;
+  --border: rgba(127,217,127,0.12); --border2: rgba(127,217,127,0.28);
+  --font-head: 'Syne', sans-serif; --font-mono: 'DM Mono', monospace;
+  --r: 12px;
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; height: 100dvh; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-mono); }
 
-  /* HEADER */
-  #header {
-    position: fixed; top: 0; left: 0; right: 0;
-    height: calc(var(--header-h) + var(--safe-top));
-    padding-top: var(--safe-top);
-    background: var(--bg2); border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; padding-left: 14px; padding-right: 14px; gap: 10px;
-    z-index: 1000;
-  }
-  #logo { font-family: var(--font-head); font-size: 15px; font-weight: 800; color: var(--accent); display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
-  #logo .sub { color: var(--text2); font-size: 10px; font-weight: 400; font-family: var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #key-status { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text2); background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 6px 10px; cursor: pointer; flex-shrink: 0; }
-  #key-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--danger); flex-shrink: 0; }
-  #key-dot.ok { background: var(--accent); }
+/* ═══════════════ MAP (full screen base) ═══════════════ */
+#map {
+  position: fixed; inset: 0;
+  z-index: 1;
+}
 
-  /* MAP */
-  #map {
-    position: fixed;
-    top: calc(var(--header-h) + var(--safe-top));
-    left: 0; right: 0;
-    bottom: calc(var(--sheet-peek) + var(--toolbar-h) + var(--safe-bottom));
-    z-index: 1;
-  }
-  #map-hint {
-    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
-    background: rgba(11,14,12,0.88); backdrop-filter: blur(8px);
-    border: 1px solid var(--border); border-radius: 20px;
-    padding: 5px 14px; font-size: 11px; color: var(--text2);
-    pointer-events: none; z-index: 500; white-space: nowrap;
-  }
-  #loading-overlay {
-    position: absolute; inset: 0; background: rgba(11,14,12,0.85); backdrop-filter: blur(4px);
-    display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 999;
-  }
-  #loading-overlay.active { display: flex; }
-  .spinner { width: 36px; height: 36px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.65s linear infinite; }
-  .loading-text { font-size: 13px; color: var(--text2); }
-  .loading-dots::after { content: ''; animation: dots 1.4s infinite; }
-  @keyframes dots { 0%,20%{content:'.'} 40%,60%{content:'..'} 80%,100%{content:'...'} }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* ═══════════════ HEADER BAR ═══════════════ */
+#header {
+  position: fixed; top: 0; left: 0; right: 0;
+  padding-top: var(--sat);
+  background: rgba(11,14,12,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+  display: flex; align-items: center; gap: 10px;
+  padding-left: 14px; padding-right: 14px;
+  padding-bottom: 10px;
+  padding-top: calc(var(--sat) + 10px);
+}
+#logo { font-family: var(--font-head); font-size: 15px; font-weight: 800; color: var(--accent); display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; }
+#logo .sub { color: var(--text2); font-size: 10px; font-weight: 600; font-family: var(--font-mono); }
+#key-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; padding: 6px 12px; font-family: var(--font-mono); font-size: 10px; color: var(--text2); cursor: pointer; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+#key-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--danger); }
+#key-dot.ok { background: var(--accent); }
 
-  /* MOBILE TOOLBAR */
-  #toolbar {
-    position: fixed; bottom: calc(var(--sheet-peek) + var(--safe-bottom)); left: 0; right: 0;
-    height: var(--toolbar-h); background: var(--bg2); border-top: 1px solid var(--border);
-    display: flex; align-items: center; gap: 8px; padding: 0 12px; z-index: 900;
-  }
-  .tbtn {
-    font-family: var(--font-mono); font-size: 12px; padding: 0 14px; height: 42px;
-    border-radius: var(--radius); border: 1px solid var(--border2); background: transparent;
-    color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
-    transition: all 0.12s; white-space: nowrap; touch-action: manipulation;
-  }
-  .tbtn:active { transform: scale(0.95); opacity: 0.8; }
-  .tbtn.primary { background: var(--accent); color: #0b0e0c; border-color: var(--accent); font-weight: 600; flex: 1; }
-  .tbtn.icon { padding: 0; width: 42px; flex-shrink: 0; font-size: 16px; }
-  .tbtn.danger { border-color: var(--border); color: var(--text2); }
-  .radius-wrap { display: flex; align-items: center; gap: 6px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 0 10px; height: 42px; flex-shrink: 0; }
-  #radius-val { font-size: 12px; color: var(--accent); font-weight: 600; min-width: 34px; }
-  input[type=range] { width: 65px; accent-color: var(--accent); cursor: pointer; height: 2px; touch-action: manipulation; }
+/* ═══════════════ FAB — Analyze button ═══════════════ */
+#fab {
+  position: fixed;
+  bottom: calc(var(--sab) + 100px);
+  right: 16px;
+  z-index: 50;
+  width: 58px; height: 58px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0b0e0c;
+  border: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; font-family: var(--font-head);
+  gap: 1px;
+  box-shadow: 0 4px 20px rgba(127,217,127,0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+  touch-action: manipulation;
+}
+#fab:active { transform: scale(0.93); box-shadow: 0 2px 10px rgba(127,217,127,0.3); }
+#fab .fab-icon { font-size: 20px; line-height: 1; }
 
-  /* BOTTOM SHEET */
+/* ═══════════════ MAP ACTION BUTTONS (right side) ═══════════════ */
+#map-actions {
+  position: fixed;
+  right: 16px;
+  z-index: 50;
+  display: flex; flex-direction: column; gap: 8px;
+}
+/* position below header dynamically via JS */
+.map-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(11,14,12,0.88);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border2);
+  color: var(--text); font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; touch-action: manipulation;
+  transition: all 0.12s;
+}
+.map-btn:active { background: var(--bg3); transform: scale(0.93); }
+.map-btn.danger:active { border-color: var(--danger); color: var(--danger); }
+
+/* ═══════════════ RADIUS PILL ═══════════════ */
+#radius-pill {
+  position: fixed;
+  left: 16px;
+  z-index: 50;
+  background: rgba(11,14,12,0.88);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border2);
+  border-radius: 24px;
+  padding: 8px 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+#radius-pill label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+#radius-val { font-size: 13px; color: var(--accent); font-weight: 600; min-width: 38px; }
+input[type=range] { width: 90px; accent-color: var(--accent); cursor: pointer; touch-action: manipulation; }
+
+/* ═══════════════ LOADING ═══════════════ */
+#loading {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(11,14,12,0.8); backdrop-filter: blur(6px);
+  display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+}
+#loading.on { display: flex; }
+.spinner { width: 38px; height: 38px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.65s linear infinite; }
+.spin-label { font-size: 13px; color: var(--text2); }
+.dots::after { content: ''; animation: dots 1.4s infinite; }
+@keyframes dots { 0%,20%{content:'.'} 40%,60%{content:'..'} 80%,100%{content:'...'} }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════ BOTTOM SHEET ═══════════════ */
+#sheet {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  z-index: 60;
+  background: var(--bg2);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border2);
+  display: flex; flex-direction: column;
+  /* collapsed: only handle + title visible (~72px) */
+  transform: translateY(calc(100% - 72px));
+  transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
+  max-height: 78vh;
+  padding-bottom: var(--sab);
+  will-change: transform;
+}
+#sheet.peek { transform: translateY(calc(100% - 72px)); }
+#sheet.half { transform: translateY(40%); }
+#sheet.full { transform: translateY(0); }
+
+#sheet-drag {
+  padding: 10px 16px 0;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  flex-shrink: 0; cursor: pointer; user-select: none;
+}
+#sheet-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--border2); }
+#sheet-toprow {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+#sheet-label { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.1em; }
+#spots-count { font-size: 10px; color: var(--accent); background: var(--accent-dim); border: 1px solid var(--border2); border-radius: 20px; padding: 2px 10px; display: none; }
+
+#spots-list { flex: 1; overflow-y: auto; padding: 10px 12px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+#spots-list::-webkit-scrollbar { display: none; }
+
+/* ═══════════════ EMPTY STATE ═══════════════ */
+.empty { padding: 20px 8px; text-align: center; }
+.empty-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.5; }
+.empty-title { font-family: var(--font-head); font-size: 15px; color: var(--text); margin-bottom: 6px; }
+.empty-sub { font-size: 11px; color: var(--text2); line-height: 1.7; }
+.steps { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; }
+.step { display: flex; align-items: center; gap: 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: var(--text2); text-align: left; }
+.step-n { width: 20px; height: 20px; border-radius: 50%; background: var(--accent-dim); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+
+/* ═══════════════ SPOT CARD ═══════════════ */
+.card {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 14px; margin-bottom: 10px; cursor: pointer;
+  animation: rise 0.3s ease both; touch-action: manipulation;
+  transition: border-color 0.15s;
+}
+.card:nth-child(1){animation-delay:.04s}.card:nth-child(2){animation-delay:.08s}
+.card:nth-child(3){animation-delay:.12s}.card:nth-child(4){animation-delay:.16s}.card:nth-child(5){animation-delay:.20s}
+@keyframes rise { from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)} }
+.card:active { transform: scale(0.98); }
+.card.active { border-color: var(--accent); background: rgba(127,217,127,0.04); }
+.card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.card-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; font-family: var(--font-head); }
+.card-name { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.card-desc { font-size: 12px; color: var(--text2); line-height: 1.65; margin-bottom: 12px; }
+.scores { display: flex; gap: 8px; margin-bottom: 10px; }
+.sc { flex: 1; }
+.sc-label { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+.sc-bar { height: 4px; border-radius: 2px; background: var(--bg); overflow: hidden; margin-bottom: 3px; }
+.sc-fill { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+.sc-val { font-size: 12px; font-weight: 600; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: 10px; padding: 3px 9px; border-radius: 20px; color: var(--accent2); border: 1px solid rgba(77,184,110,0.3); background: rgba(77,184,110,0.07); }
+.warn-box { margin-top: 10px; font-size: 11px; color: var(--warn); background: rgba(232,184,75,0.07); border: 1px solid rgba(232,184,75,0.2); border-radius: 8px; padding: 8px 10px; line-height: 1.5; display: flex; gap: 6px; }
+
+/* ═══════════════ MODAL ═══════════════ */
+#modal { position: fixed; inset: 0; z-index: 300; background: rgba(11,14,12,0.93); backdrop-filter: blur(10px); display: flex; align-items: flex-end; }
+#modal.hidden { display: none; }
+.mbox { background: var(--bg2); border: 1px solid var(--border2); border-radius: 22px 22px 0 0; padding: 28px 22px; width: 100%; padding-bottom: calc(28px + var(--sab)); animation: sup 0.3s cubic-bezier(.4,0,.2,1); }
+@keyframes sup { from{transform:translateY(100%)}to{transform:translateY(0)} }
+.mbox h2 { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+.mbox p { font-size: 12px; color: var(--text2); line-height: 1.7; margin-bottom: 20px; }
+.mlabel { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; display: block; }
+.minput-wrap { position: relative; margin-bottom: 14px; }
+.minput { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r); padding: 14px 46px 14px 14px; font-family: var(--font-mono); font-size: 14px; color: var(--text); outline: none; -webkit-appearance: none; appearance: none; transition: border-color 0.15s; }
+.minput:focus { border-color: var(--accent); }
+.mvis { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text2); font-size: 18px; cursor: pointer; padding: 8px; }
+.msubmit { width: 100%; height: 52px; background: var(--accent); color: #0b0e0c; border: none; border-radius: var(--r); font-family: var(--font-mono); font-size: 15px; font-weight: 600; cursor: pointer; touch-action: manipulation; }
+.msubmit:active { background: #92e092; transform: scale(0.98); }
+.mnote { font-size: 11px; color: var(--text2); margin-top: 14px; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; line-height: 1.7; }
+.mnote a { color: var(--accent); text-decoration: none; }
+
+/* ═══════════════ LEAFLET OVERRIDES ═══════════════ */
+.leaflet-tile { filter: brightness(0.72) saturate(0.55) hue-rotate(12deg); }
+.leaflet-container { background: #141a12; }
+.leaflet-control-zoom { display: none !important; } /* we use custom buttons */
+.leaflet-popup-content-wrapper { background: var(--bg2) !important; color: var(--text) !important; border: 1px solid var(--border2); border-radius: var(--r) !important; font-family: var(--font-mono); font-size: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.5) !important; }
+.leaflet-popup-tip { background: var(--bg2) !important; }
+.leaflet-control-attribution { display: none; }
+
+/* ═══════════════ DESKTOP OVERRIDE ═══════════════ */
+@media (min-width: 768px) {
+  #map { right: 340px; }
+  #fab, #map-actions, #radius-pill { right: auto; }
   #sheet {
-    position: fixed; left: 0; right: 0; bottom: var(--safe-bottom);
-    height: calc(72vh + var(--sheet-peek));
-    background: var(--bg2); border-top: 1px solid var(--border2); border-radius: 20px 20px 0 0;
-    z-index: 800; display: flex; flex-direction: column;
-    transform: translateY(calc(100% - var(--sheet-peek)));
-    transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+    position: fixed; top: 0; right: 0; bottom: 0; left: auto;
+    width: 340px; max-height: 100vh; border-radius: 0;
+    transform: none !important; border-top: none;
+    border-left: 1px solid var(--border);
+    flex-direction: column;
   }
-  #sheet.open { transform: translateY(0); }
-  #sheet-handle-wrap { padding: 10px 0 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0; }
-  #sheet-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; }
-  #sheet-title { display: flex; align-items: center; justify-content: space-between; padding: 0 16px 10px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
-  #sheet-title .label { font-size: 10px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.1em; }
-  #spots-count { font-size: 10px; color: var(--accent); background: var(--accent-dim); border: 1px solid var(--border2); border-radius: 20px; padding: 1px 8px; display: none; }
-  #spots-list { flex: 1; overflow-y: auto; padding: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-  #spots-list::-webkit-scrollbar { display: none; }
-
-  /* EMPTY STATE */
-  .empty-state { padding: 24px 12px; text-align: center; }
-  .empty-icon { font-size: 28px; margin-bottom: 12px; opacity: 0.6; }
-  .empty-title { font-family: var(--font-head); font-size: 14px; color: var(--text); margin-bottom: 6px; font-weight: 600; }
-  .empty-sub { font-size: 11px; color: var(--text2); line-height: 1.7; }
-  .empty-steps { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; }
-  .step { display: flex; align-items: center; gap: 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 11px; color: var(--text2); text-align: left; }
-  .step-num { width: 18px; height: 18px; border-radius: 50%; background: var(--border); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
-
-  /* SPOT CARD */
-  .spot-card {
-    background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 13px 14px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s;
-    animation: fadeSlide 0.3s ease both; touch-action: manipulation;
+  #sheet-drag { display: none; }
+  #sheet-toprow { padding: 14px 16px 12px; border-bottom: 1px solid var(--border); }
+  #desktop-bar {
+    display: flex; flex-direction: column; gap: 0;
+    position: fixed; top: 0; right: 0; width: 340px;
+    background: var(--bg2); border-left: 1px solid var(--border);
+    z-index: 70;
   }
-  @keyframes fadeSlide { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:translateY(0); } }
-  .spot-card:nth-child(1){animation-delay:.04s} .spot-card:nth-child(2){animation-delay:.08s}
-  .spot-card:nth-child(3){animation-delay:.12s} .spot-card:nth-child(4){animation-delay:.16s}
-  .spot-card:nth-child(5){animation-delay:.20s}
-  .spot-card:active { transform: scale(0.99); }
-  .spot-card.active { border-color: var(--accent); background: rgba(127,217,127,0.04); }
-  .spot-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
-  .spot-num { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; font-family: var(--font-head); }
-  .spot-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.3; font-family: var(--font-head); }
-  .spot-desc { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 10px; }
-  .score-row { display: flex; gap: 8px; margin-bottom: 10px; }
-  .score-item { flex: 1; }
-  .score-label { font-size: 9px; color: var(--text3); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.07em; }
-  .score-bar { height: 4px; border-radius: 2px; background: var(--bg); overflow: hidden; margin-bottom: 3px; }
-  .score-fill { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
-  .score-val { font-size: 12px; font-weight: 500; }
-  .tags { display: flex; flex-wrap: wrap; gap: 4px; }
-  .tag { font-size: 10px; padding: 3px 9px; border-radius: 20px; border: 1px solid; }
-  .tag-green { color: var(--accent2); border-color: rgba(77,184,110,0.3); background: rgba(77,184,110,0.07); }
-  .warning-box { margin-top: 8px; font-size: 11px; color: var(--warn); background: rgba(232,184,75,0.07); border: 1px solid rgba(232,184,75,0.2); border-radius: 8px; padding: 8px 10px; line-height: 1.5; display: flex; gap: 6px; align-items: flex-start; }
-
-  /* MODAL */
-  #api-modal { position: fixed; inset: 0; background: rgba(11,14,12,0.93); backdrop-filter: blur(8px); display: flex; align-items: flex-end; z-index: 9999; }
-  #api-modal.hidden { display: none; }
-  .modal-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 20px 20px 0 0; padding: 28px 24px calc(28px + var(--safe-bottom)); width: 100%; animation: slideUp 0.3s cubic-bezier(.4,0,.2,1); }
-  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-  .modal-logo { font-size: 26px; margin-bottom: 12px; }
-  .modal-box h2 { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
-  .modal-desc { font-size: 12px; color: var(--text2); line-height: 1.7; margin-bottom: 20px; }
-  .input-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; display: block; }
-  .input-wrap { position: relative; margin-bottom: 14px; }
-  .modal-box input[type=password], .modal-box input[type=text] {
-    width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius);
-    padding: 13px 44px 13px 14px; font-family: var(--font-mono); font-size: 14px; color: var(--text);
-    outline: none; transition: border-color 0.15s; -webkit-appearance: none; appearance: none;
-  }
-  .modal-box input:focus { border-color: var(--accent); }
-  .toggle-vis { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text2); font-size: 16px; padding: 8px; }
-  .modal-note { font-size: 11px; color: var(--text2); margin-top: 14px; line-height: 1.7; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; }
-  .modal-note a { color: var(--accent); text-decoration: none; }
-  .modal-btn { width: 100%; height: 50px; background: var(--accent); color: #0b0e0c; border: none; border-radius: var(--radius); font-family: var(--font-mono); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
-  .modal-btn:active { background: #92e092; transform: scale(0.98); }
-
-  /* LEAFLET */
-  .leaflet-tile { filter: brightness(0.72) saturate(0.55) hue-rotate(12deg); }
-  .leaflet-container { background: #141a12; }
-  .leaflet-control-zoom { border: 1px solid var(--border) !important; border-radius: 10px !important; overflow: hidden; margin-right: 12px !important; margin-top: 12px !important; }
-  .leaflet-control-zoom a { background: var(--bg2) !important; color: var(--accent) !important; border-color: var(--border) !important; width: 36px !important; height: 36px !important; line-height: 36px !important; font-size: 18px !important; }
-  .leaflet-popup-content-wrapper { background: var(--bg2) !important; color: var(--text) !important; border: 1px solid var(--border2); border-radius: var(--radius) !important; font-family: var(--font-mono); font-size: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.5) !important; }
-  .leaflet-popup-tip { background: var(--bg2) !important; }
-  .leaflet-control-attribution { display: none; }
-
-  /* DESKTOP */
-  @media (min-width: 768px) {
-    #map { right: 340px; bottom: 0; top: var(--header-h); }
-    #toolbar { display: none; }
-    #sheet {
-      position: static; transform: none !important;
-      height: auto; flex: 1; border-radius: 0;
-      border-top: none; border: none;
-    }
-    #sheet-handle-wrap { display: none; }
-    #desktop-sidebar {
-      display: flex; flex-direction: column;
-      position: fixed; top: var(--header-h); right: 0;
-      width: 340px; height: calc(100vh - var(--header-h));
-      background: var(--bg2); border-left: 1px solid var(--border);
-      z-index: 500;
-    }
-    #desktop-actions { display: flex; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    .dbtn { font-family: var(--font-mono); font-size: 11px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border2); background: transparent; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s; white-space: nowrap; }
-    .dbtn:hover { background: var(--bg3); border-color: var(--accent); color: var(--accent); }
-    .dbtn.primary { background: var(--accent); color: #0b0e0c; border-color: var(--accent); font-weight: 600; flex: 1; justify-content: center; }
-    .dbtn.primary:hover { background: #92e092; }
-    .dbtn.danger:hover { border-color: var(--danger); color: var(--danger); }
-    #desktop-radius { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    #desktop-radius label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; }
-    #desktop-radius input[type=range] { flex: 1; width: auto; }
-    #radius-val-d { font-size: 12px; color: var(--accent); font-weight: 600; min-width: 40px; }
-    #sheet-title { border-bottom: 1px solid var(--border); }
-  }
-  #desktop-sidebar { display: none; }
-  @media (min-width: 768px) { #desktop-sidebar { display: flex; } }
+  #desktop-actions { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); }
+  #desktop-radius { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  #desktop-radius label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+  #desktop-radius input { flex: 1; width: auto; }
+  #desktop-radius span { font-size: 12px; color: var(--accent); font-weight: 600; min-width: 40px; }
+  .dbtn { font-family: var(--font-mono); font-size: 11px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border2); background: transparent; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s; white-space: nowrap; }
+  .dbtn:hover { background: var(--bg3); border-color: var(--accent); color: var(--accent); }
+  .dbtn.p { background: var(--accent); color: #0b0e0c; border-color: var(--accent); font-weight: 600; flex: 1; justify-content: center; }
+  .dbtn.p:hover { background: #92e092; }
+  .dbtn.d:hover { border-color: var(--danger); color: var(--danger); }
+  #header { right: 340px; }
+  #fab { display: none; }
+  #map-actions { display: none; }
+  #radius-pill { display: none; }
+  #sheet { top: 0; padding-top: 130px; } /* leave room for desktop-bar */
+}
+#desktop-bar { display: none; }
+@media (min-width: 768px) { #desktop-bar { display: flex; } }
 </style>
 </head>
 <body>
 
 <!-- MODAL -->
-<div id="api-modal">
-  <div class="modal-box">
-    <div class="modal-logo">🌲</div>
+<div id="modal">
+  <div class="mbox">
+    <div style="font-size:26px;margin-bottom:12px">🌲</div>
     <h2>Wild Sleep Navigator</h2>
-    <p class="modal-desc">Potřebuješ Anthropic API klíč pro AI analýzu. Uloží se jen do tohoto prohlížeče.</p>
-    <label class="input-label">API klíč</label>
-    <div class="input-wrap">
-      <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off" onkeydown="if(event.key==='Enter')saveKey()">
-      <button class="toggle-vis" onclick="toggleVis()">👁</button>
+    <p>AI hledá místa k přespání dodávkou. Potřebuješ Anthropic API klíč — uloží se jen v tomto prohlížeči.</p>
+    <label class="mlabel">API klíč</label>
+    <div class="minput-wrap">
+      <input class="minput" type="password" id="api-input" placeholder="sk-ant-api03-..." autocomplete="off" onkeydown="if(event.key==='Enter')saveKey()">
+      <button class="mvis" onclick="toggleVis()">👁</button>
     </div>
-    <button class="modal-btn" onclick="saveKey()">Uložit a spustit →</button>
-    <p class="modal-note">
-      Klíč získáš na <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys.<br>
-      Klíč se ukládá jen v prohlížeči, nikam se neposílá.
-    </p>
+    <button class="msubmit" onclick="saveKey()">Uložit a spustit →</button>
+    <div class="mnote">Klíč získáš na <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. Klíč se nikam neposílá.</div>
   </div>
 </div>
 
 <!-- HEADER -->
 <div id="header">
-  <div id="logo">
-    <span>🌲</span>
-    <span>Wild Sleep</span>
-    <span class="sub">van & dodávka · Evropa</span>
-  </div>
-  <div id="key-status" onclick="changeKey()">
-    <div id="key-dot"></div>
-    <span id="key-label">API klíč</span>
-  </div>
+  <div id="logo">🌲 Wild Sleep <span class="sub">· van & dodávka</span></div>
+  <div id="key-btn" onclick="showModal()"><div id="key-dot"></div><span id="key-label">API klíč</span></div>
 </div>
 
 <!-- MAP -->
 <div id="map">
-  <div id="map-hint">Klepni na mapu pro přidání bodu</div>
-  <div id="loading-overlay">
+  <div id="loading">
     <div class="spinner"></div>
-    <div class="loading-text">AI analyzuje místa<span class="loading-dots"></span></div>
+    <div class="spin-label">AI analyzuje místa<span class="dots"></span></div>
   </div>
 </div>
 
-<!-- MOBILE TOOLBAR -->
-<div id="toolbar">
-  <button class="tbtn icon" onclick="locateMe()">⊙</button>
-  <div class="radius-wrap">
-    <input type="range" id="radius-slider" min="5" max="100" value="30" step="5" oninput="updateRadius(this.value)">
-    <span id="radius-val">30km</span>
-  </div>
-  <button class="tbtn primary" onclick="analyze()">✦ Analyzovat</button>
-  <button class="tbtn icon danger" onclick="clearAll()">✕</button>
+<!-- MAP ACTION BUTTONS (right side, below header) -->
+<div id="map-actions">
+  <button class="map-btn" onclick="zoomIn()" title="Přiblížit">＋</button>
+  <button class="map-btn" onclick="zoomOut()" title="Oddálit">－</button>
+  <button class="map-btn" onclick="locateMe()" title="Moje poloha">⊙</button>
+  <button class="map-btn danger" onclick="clearAll()" title="Smazat vše">✕</button>
 </div>
 
-<!-- BOTTOM SHEET (mobile) -->
+<!-- RADIUS PILL (left side, below header) -->
+<div id="radius-pill">
+  <label>Radius</label>
+  <input type="range" id="rslider" min="5" max="100" value="30" step="5" oninput="updateRadius(this.value)">
+  <span id="radius-val">30 km</span>
+</div>
+
+<!-- FAB — Analyze -->
+<button id="fab" onclick="analyze()">
+  <span class="fab-icon">✦</span>
+  <span>Hledat</span>
+</button>
+
+<!-- BOTTOM SHEET -->
 <div id="sheet">
-  <div id="sheet-handle-wrap" onclick="toggleSheet()">
+  <div id="sheet-drag">
     <div id="sheet-handle"></div>
-  </div>
-  <div id="sheet-title">
-    <span class="label">Navrhovaná místa</span>
-    <span id="spots-count"></span>
+    <div id="sheet-toprow">
+      <span id="sheet-label">Navrhovaná místa</span>
+      <span id="spots-count"></span>
+    </div>
   </div>
   <div id="spots-list">
-    <div class="empty-state">
+    <div class="empty">
       <div class="empty-icon">🗺️</div>
       <div class="empty-title">Začni plánovat</div>
-      <div class="empty-sub">Klepni na mapu pro přidání bodů, pak klikni Analyzovat.</div>
-      <div class="empty-steps">
-        <div class="step"><div class="step-num">1</div>Klepni na mapu → přidáš bod trasy</div>
-        <div class="step"><div class="step-num">2</div>Nastav radius posuvníkem</div>
-        <div class="step"><div class="step-num">3</div>Klepni Analyzovat</div>
+      <div class="empty-sub">Klepni na mapu pro přidání bodů trasy, pak stiskni Hledat.</div>
+      <div class="steps">
+        <div class="step"><div class="step-n">1</div>Klepni na mapu → přidáš bod</div>
+        <div class="step"><div class="step-n">2</div>Nastav radius posuvníkem</div>
+        <div class="step"><div class="step-n">3</div>Stiskni ✦ Hledat</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- DESKTOP SIDEBAR -->
-<div id="desktop-sidebar">
+<!-- DESKTOP SIDEBAR BAR -->
+<div id="desktop-bar">
   <div id="desktop-actions">
     <button class="dbtn" onclick="locateMe()">⊙ Poloha</button>
-    <button class="dbtn primary" onclick="analyze()">✦ Analyzovat</button>
-    <button class="dbtn danger" onclick="clearAll()">✕</button>
+    <button class="dbtn p" onclick="analyze()">✦ Analyzovat</button>
+    <button class="dbtn d" onclick="clearAll()">✕</button>
   </div>
   <div id="desktop-radius">
     <label>Radius:</label>
-    <input type="range" id="radius-slider-d" min="5" max="100" value="30" step="5" oninput="updateRadiusD(this.value)">
+    <input type="range" id="rslider-d" min="5" max="100" value="30" step="5" oninput="updateRadiusD(this.value)">
     <span id="radius-val-d">30 km</span>
   </div>
-  <!-- sheet gets moved here on desktop via JS -->
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  let map, waypoints=[], spotMarkers=[], radiusCircle=null, radiusKm=30, sheetOpen=false;
-  const COLORS=['#7fd97f','#4db86e','#e8b84b','#6ab8d4','#c47ecc'];
+// ── STATE
+let map, waypoints=[], spotMarkers=[], radiusCircle=null, radiusKm=30;
+const COLORS=['#7fd97f','#4db86e','#e8b84b','#6ab8d4','#c47ecc'];
+const mobile=()=>window.innerWidth<768;
 
-  const isMobile=()=>window.innerWidth<768;
+// ── KEY
+const getKey=()=>localStorage.getItem('wsn_k');
+const setKey=k=>{localStorage.setItem('wsn_k',k);syncKeyUI();};
+const delKey=()=>{localStorage.removeItem('wsn_k');syncKeyUI();};
+function syncKeyUI(){
+  const ok=!!getKey();
+  document.getElementById('key-dot').classList.toggle('ok',ok);
+  document.getElementById('key-label').textContent=ok?'Klíč ✓':'API klíč';
+}
+function saveKey(){
+  const k=document.getElementById('api-input').value.trim();
+  if(!k.startsWith('sk-')){alert('Klíč musí začínat sk-');return;}
+  setKey(k); document.getElementById('modal').classList.add('hidden');
+}
+function showModal(){ document.getElementById('api-input').value=getKey()||''; document.getElementById('modal').classList.remove('hidden'); }
+function toggleVis(){ const i=document.getElementById('api-input'); i.type=i.type==='password'?'text':'password'; }
 
-  // KEY
-  const getKey=()=>localStorage.getItem('wsn_key_v2');
-  const setKey=k=>{localStorage.setItem('wsn_key_v2',k);updateKeyStatus();};
-  const removeKey=()=>{localStorage.removeItem('wsn_key_v2');updateKeyStatus();};
+// ── SHEET (mobile swipe)
+const sheet=document.getElementById('sheet');
+let sheetState='peek'; // peek | half | full
+const states={peek:'peek',half:'half',full:'full'};
 
-  function updateKeyStatus(){
-    const k=getKey();
-    document.getElementById('key-dot').classList.toggle('ok',!!k);
-    document.getElementById('key-label').textContent=k?'Klíč ✓':'API klíč';
-  }
-  function saveKey(){
-    const k=document.getElementById('api-key-input').value.trim();
-    if(!k.startsWith('sk-')){alert('Klíč musí začínat sk-');return;}
-    setKey(k); document.getElementById('api-modal').classList.add('hidden');
-  }
-  function changeKey(){ document.getElementById('api-key-input').value=getKey()||''; document.getElementById('api-modal').classList.remove('hidden'); }
-  function toggleVis(){ const i=document.getElementById('api-key-input'); i.type=i.type==='password'?'text':'password'; }
+function setSheet(s){ sheetState=s; sheet.className=s; }
 
-  // LAYOUT
-  function setupLayout(){
-    const sheet=document.getElementById('sheet');
-    const sidebar=document.getElementById('desktop-sidebar');
-    if(!isMobile() && sheet.parentElement!==sidebar){ sidebar.appendChild(sheet); }
-    else if(isMobile() && sheet.parentElement===sidebar){ document.body.appendChild(sheet); }
-  }
+let dragStartY=0, dragStartState='peek';
+document.getElementById('sheet-drag').addEventListener('touchstart',e=>{
+  dragStartY=e.touches[0].clientY; dragStartState=sheetState;
+},{passive:true});
+document.getElementById('sheet-drag').addEventListener('touchend',e=>{
+  const dy=dragStartY-e.changedTouches[0].clientY;
+  if(dy>40) setSheet(sheetState==='peek'?'half':'full');
+  else if(dy<-40) setSheet(sheetState==='full'?'half':'peek');
+},{passive:true});
+document.getElementById('sheet-drag').addEventListener('click',()=>{
+  if(sheetState==='peek') setSheet('half');
+  else if(sheetState==='half') setSheet('full');
+  else setSheet('peek');
+});
 
-  // SHEET
-  function toggleSheet(){ sheetOpen=!sheetOpen; document.getElementById('sheet').classList.toggle('open',sheetOpen); }
-  function openSheet(){ sheetOpen=true; document.getElementById('sheet').classList.add('open'); }
+// ── MAP INIT
+function initMap(){
+  const headerH=document.getElementById('header').offsetHeight;
+  map=L.map('map',{zoomControl:false,preferCanvas:true,tap:true}).setView([49.8,15.5],7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+  map.on('click',e=>addWaypoint(e.latlng.lat,e.latlng.lng));
 
-  // MAP
-  function initMap(){
-    map=L.map('map',{zoomControl:true,preferCanvas:true,tap:true}).setView([49.8,15.5],7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
-    map.zoomControl.setPosition('topright');
-    map.on('click',e=>addWaypoint(e.latlng.lat,e.latlng.lng));
-  }
+  // position floating elements below header
+  const top=headerH+10;
+  document.getElementById('map-actions').style.top=top+'px';
+  document.getElementById('radius-pill').style.top=top+'px';
+}
 
-  window.addEventListener('DOMContentLoaded',()=>{
-    setupLayout(); updateKeyStatus();
-    if(getKey()) document.getElementById('api-modal').classList.add('hidden');
-    initMap();
-  });
-  window.addEventListener('resize',setupLayout);
+function zoomIn(){ map.zoomIn(); }
+function zoomOut(){ map.zoomOut(); }
 
-  // WAYPOINTS
-  function makeIcon(idx,color='#7fd97f'){
-    const s=isMobile()?34:28;
-    return L.divIcon({className:'',html:`<div style="background:${color};color:#0b0e0c;width:${s}px;height:${s}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${s>30?13:11}px;font-weight:800;border:2px solid rgba(11,14,12,0.8);box-shadow:0 2px 10px rgba(0,0,0,0.6);font-family:'Syne',sans-serif;">${idx+1}</div>`,iconSize:[s,s],iconAnchor:[s/2,s/2]});
-  }
+window.addEventListener('DOMContentLoaded',()=>{
+  syncKeyUI();
+  if(getKey()) document.getElementById('modal').classList.add('hidden');
+  initMap();
+});
 
-  function addWaypoint(lat,lng){
-    const idx=waypoints.length;
-    const m=L.marker([lat,lng],{icon:makeIcon(idx),draggable:!isMobile()}).addTo(map);
-    m.on('contextmenu',()=>{const i=waypoints.findIndex(w=>w.marker===m);removeWaypoint(i);});
-    m.on('dragend',()=>{const i=waypoints.findIndex(w=>w.marker===m);if(i>=0){const p=m.getLatLng();waypoints[i].lat=p.lat;waypoints[i].lng=p.lng;}updateRadiusCircle();});
-    waypoints.push({lat,lng,marker:m});
-    updateHint(); updateRadiusCircle();
-  }
+// ── WAYPOINTS
+function mkIcon(idx,color='#7fd97f'){
+  const s=mobile()?36:28;
+  return L.divIcon({className:'',html:`<div style="background:${color};color:#0b0e0c;width:${s}px;height:${s}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${s>30?14:11}px;font-weight:800;border:2.5px solid rgba(11,14,12,0.85);box-shadow:0 2px 12px rgba(0,0,0,0.65);font-family:'Syne',sans-serif;">${idx+1}</div>`,iconSize:[s,s],iconAnchor:[s/2,s/2]});
+}
 
-  function removeWaypoint(idx){
-    if(idx<0||idx>=waypoints.length)return;
-    waypoints[idx].marker.remove(); waypoints.splice(idx,1);
-    waypoints.forEach((w,i)=>w.marker.setIcon(makeIcon(i)));
-    updateHint(); updateRadiusCircle();
-  }
+function addWaypoint(lat,lng){
+  const idx=waypoints.length;
+  const m=L.marker([lat,lng],{icon:mkIcon(idx),draggable:!mobile()}).addTo(map);
+  m.on('contextmenu',()=>{ const i=waypoints.findIndex(w=>w.marker===m); removeWaypoint(i); });
+  m.on('dragend',()=>{ const i=waypoints.findIndex(w=>w.marker===m); if(i>=0){const p=m.getLatLng();waypoints[i].lat=p.lat;waypoints[i].lng=p.lng;} updateCircle(); });
+  // long press on mobile = delete
+  let lt; m.on('mousedown',()=>{lt=setTimeout(()=>{const i=waypoints.findIndex(w=>w.marker===m);removeWaypoint(i);},600);}); m.on('mouseup',()=>clearTimeout(lt)); m.on('dragstart',()=>clearTimeout(lt));
+  waypoints.push({lat,lng,marker:m});
+  updateCircle();
+}
 
-  function updateHint(){
-    document.getElementById('map-hint').textContent=waypoints.length===0
-      ?(isMobile()?'Klepni na mapu pro přidání bodu':'Klikni na mapu · pravý klik na značku = smazat')
-      :`${waypoints.length} bod${waypoints.length>1?'ů':''} · ${isMobile()?'dlouhý stisk':'pravý klik'} = smazat`;
-  }
+function removeWaypoint(i){
+  if(i<0||i>=waypoints.length)return;
+  waypoints[i].marker.remove(); waypoints.splice(i,1);
+  waypoints.forEach((w,j)=>w.marker.setIcon(mkIcon(j)));
+  updateCircle();
+}
 
-  function updateRadius(v){ radiusKm=parseInt(v); document.getElementById('radius-val').textContent=radiusKm+'km'; const d=document.getElementById('radius-val-d'); if(d){d.textContent=radiusKm+' km'; document.getElementById('radius-slider-d').value=radiusKm;} updateRadiusCircle(); }
-  function updateRadiusD(v){ radiusKm=parseInt(v); document.getElementById('radius-val-d').textContent=radiusKm+' km'; document.getElementById('radius-val').textContent=radiusKm+'km'; document.getElementById('radius-slider').value=radiusKm; updateRadiusCircle(); }
+function updateRadius(v){ radiusKm=+v; document.getElementById('radius-val').textContent=radiusKm+' km'; const d=document.getElementById('radius-val-d'); if(d){d.textContent=radiusKm+' km';document.getElementById('rslider-d').value=radiusKm;} updateCircle(); }
+function updateRadiusD(v){ radiusKm=+v; document.getElementById('radius-val-d').textContent=radiusKm+' km'; document.getElementById('radius-val').textContent=radiusKm+' km'; document.getElementById('rslider').value=radiusKm; updateCircle(); }
 
-  function updateRadiusCircle(){
-    if(radiusCircle){radiusCircle.remove();radiusCircle=null;}
-    if(waypoints.length===0)return;
-    const last=waypoints[waypoints.length-1];
-    radiusCircle=L.circle([last.lat,last.lng],{radius:radiusKm*1000,color:'#7fd97f',fillColor:'#7fd97f',fillOpacity:0.04,weight:1.5,dashArray:'8,6',opacity:0.5}).addTo(map);
-  }
+function updateCircle(){
+  if(radiusCircle){radiusCircle.remove();radiusCircle=null;}
+  if(!waypoints.length)return;
+  const l=waypoints[waypoints.length-1];
+  radiusCircle=L.circle([l.lat,l.lng],{radius:radiusKm*1000,color:'#7fd97f',fillColor:'#7fd97f',fillOpacity:0.05,weight:1.5,dashArray:'8,6',opacity:0.5}).addTo(map);
+}
 
-  function locateMe(){
-    if(!navigator.geolocation){alert('Geolokace není dostupná.');return;}
-    navigator.geolocation.getCurrentPosition(
-      p=>{map.setView([p.coords.latitude,p.coords.longitude],11);addWaypoint(p.coords.latitude,p.coords.longitude);},
-      ()=>alert('Nepodařilo se získat polohu.')
-    );
-  }
+function locateMe(){
+  if(!navigator.geolocation){alert('Geolokace není dostupná.');return;}
+  navigator.geolocation.getCurrentPosition(p=>{map.setView([p.coords.latitude,p.coords.longitude],11);addWaypoint(p.coords.latitude,p.coords.longitude);},()=>alert('Nepodařilo se získat polohu.'));
+}
 
-  function clearAll(){
-    waypoints.forEach(w=>w.marker.remove());waypoints=[];
-    spotMarkers.forEach(m=>m.remove());spotMarkers=[];
-    if(radiusCircle){radiusCircle.remove();radiusCircle=null;}
-    document.getElementById('spots-count').style.display='none';
-    renderEmpty(); updateHint();
-    if(isMobile()){sheetOpen=false;document.getElementById('sheet').classList.remove('open');}
-  }
+function clearAll(){
+  waypoints.forEach(w=>w.marker.remove());waypoints=[];
+  spotMarkers.forEach(m=>m.remove());spotMarkers=[];
+  if(radiusCircle){radiusCircle.remove();radiusCircle=null;}
+  document.getElementById('spots-count').style.display='none';
+  emptyList();
+  if(mobile()) setSheet('peek');
+}
 
-  function renderEmpty(){
-    document.getElementById('spots-list').innerHTML=`<div class="empty-state"><div class="empty-icon">🗺️</div><div class="empty-title">Začni plánovat</div><div class="empty-sub">Klepni na mapu pro přidání bodů, pak klikni Analyzovat.</div><div class="empty-steps"><div class="step"><div class="step-num">1</div>Klepni na mapu → přidáš bod trasy</div><div class="step"><div class="step-num">2</div>Nastav radius posuvníkem</div><div class="step"><div class="step-num">3</div>Klepni Analyzovat</div></div></div>`;
-  }
+function emptyList(){
+  document.getElementById('spots-list').innerHTML=`<div class="empty"><div class="empty-icon">🗺️</div><div class="empty-title">Začni plánovat</div><div class="empty-sub">Klepni na mapu pro přidání bodů trasy, pak stiskni Hledat.</div><div class="steps"><div class="step"><div class="step-n">1</div>Klepni na mapu → přidáš bod</div><div class="step"><div class="step-n">2</div>Nastav radius posuvníkem</div><div class="step"><div class="step-n">3</div>Stiskni ✦ Hledat</div></div></div>`;
+}
 
-  // ANALYZE
-  async function analyze(){
-    const key=getKey();
-    if(!key){changeKey();return;}
-    if(waypoints.length===0){alert('Přidej alespoň jeden bod na mapě.');return;}
+// ── ANALYZE
+async function analyze(){
+  const key=getKey(); if(!key){showModal();return;}
+  if(!waypoints.length){alert('Přidej alespoň jeden bod na mapě.');return;}
+  document.getElementById('loading').classList.add('on');
+  spotMarkers.forEach(m=>m.remove());spotMarkers=[];
 
-    document.getElementById('loading-overlay').classList.add('active');
-    spotMarkers.forEach(m=>m.remove());spotMarkers=[];
+  const last=waypoints[waypoints.length-1];
+  const wpl=waypoints.map((w,i)=>`Bod ${i+1}: [${w.lat.toFixed(5)}, ${w.lng.toFixed(5)}]`).join('\n');
 
-    const last=waypoints[waypoints.length-1];
-    const wpList=waypoints.map((w,i)=>`Bod ${i+1}: [${w.lat.toFixed(5)}, ${w.lng.toFixed(5)}]`).join('\n');
-
-    const prompt=`Jsi expert na divoké přespání v Evropě specializující se na van life a cestování dodávkou.
+  const prompt=`Jsi expert na divoké přespání v Evropě pro van life a dodávky.
 
 Trasa:
-${wpList}
+${wpl}
 Poslední pozice: [${last.lat.toFixed(5)}, ${last.lng.toFixed(5)}]
 Radius: ${radiusKm} km · Vozidlo: dodávka/van
 
-Najdi 5 konkrétních reálných míst k přespání dodávkou v zadaném radiusu.
+Najdi 5 konkrétních reálných míst k přespání v zadaném radiusu.
 Kritéria: 1) Soukromí/ukrytost 2) Bezpečnost 3) Dostupnost dodávkou
-Preferuj: lesní parkoviště, polní cesty, odlehlá jezera, vyhlídky mimo sezónu.
+Preferuj: lesní parkoviště, odlehlé polní cesty, jezera mimo turistická centra, vyhlídky mimo sezónu.
 Vyhni se: centra měst, turistická parkoviště, soukromé pozemky, NP se zákazem.
 
 Vrať POUZE JSON array (žádný text, žádné backticky):
-[{"name":"...","lat":49.12,"lng":15.67,"privacy":88,"safety":85,"overall":87,"description":"2-3 věty o místě a přístupu.","tags":["les","odlehlé"],"warning":null}]
+[{"name":"...","lat":49.12,"lng":15.67,"privacy":88,"safety":85,"overall":87,"description":"2-3 věty.","tags":["les"],"warning":null}]
+Souřadnice musí být reálné a v radiusu. Vše česky.`;
 
-Souřadnice musí být reálné a v radiusu. Texty v češtině.`;
-
-    try{
-      const resp=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1800,messages:[{role:'user',content:prompt}]})
-      });
-      if(resp.status===401){removeKey();alert('Neplatný API klíč.');changeKey();return;}
-      if(!resp.ok){const e=await resp.text();alert('Chyba API: '+resp.status+'\n'+e);return;}
-
-      const data=await resp.json();
-      const raw=data.content.map(b=>b.text||'').join('');
-      const clean=raw.replace(/```json|```/g,'').trim();
-
-      let spots;
-      try{spots=JSON.parse(clean);}
-      catch(e){alert('Chyba zpracování odpovědi. Zkus znovu.');return;}
-
-      renderSpots(spots);
-      if(spots.length>0){
-        map.fitBounds(L.latLngBounds([...spots.map(s=>[s.lat,s.lng]),...waypoints.map(w=>[w.lat,w.lng])]),{padding:[50,50]});
-        if(isMobile()) openSheet();
-      }
-    }catch(e){alert('Chyba: '+e.message);}
-    finally{document.getElementById('loading-overlay').classList.remove('active');}
-  }
-
-  // RENDER
-  function renderSpots(spots){
-    const list=document.getElementById('spots-list');
-    list.innerHTML='';
-    const cnt=document.getElementById('spots-count');
-    cnt.textContent=spots.length+' míst'; cnt.style.display='block';
-
-    spots.forEach((spot,i)=>{
-      const color=COLORS[i%COLORS.length];
-      const oc=spot.overall>=75?'#7fd97f':spot.overall>=55?'#e8b84b':'#e06060';
-      const ms=isMobile()?34:26;
-
-      const m=L.marker([spot.lat,spot.lng],{icon:L.divIcon({className:'',html:`<div style="background:${color};color:#0b0e0c;width:${ms}px;height:${ms}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;border:2px solid rgba(11,14,12,0.8);box-shadow:0 3px 12px rgba(0,0,0,0.7);font-family:'Syne',sans-serif;">${i+1}</div>`,iconSize:[ms,ms],iconAnchor:[ms/2,ms/2]})}).addTo(map);
-      m.bindPopup(`<strong style="font-family:'Syne',sans-serif">${spot.name}</strong><br><span style="color:#7fd97f">Celkem: ${spot.overall}/100</span>`);
-      spotMarkers.push(m);
-
-      const card=document.createElement('div');
-      card.className='spot-card';
-      card.innerHTML=`
-        <div class="spot-header">
-          <div class="spot-num" style="background:${color}18;color:${color};border:1px solid ${color}35">${i+1}</div>
-          <div class="spot-name">${esc(spot.name)}</div>
-        </div>
-        <div class="spot-desc">${esc(spot.description)}</div>
-        <div class="score-row">
-          <div class="score-item"><div class="score-label">Soukromí</div><div class="score-bar"><div class="score-fill" style="width:${spot.privacy}%;background:#7fd97f"></div></div><div class="score-val" style="color:#7fd97f">${spot.privacy}</div></div>
-          <div class="score-item"><div class="score-label">Bezpečnost</div><div class="score-bar"><div class="score-fill" style="width:${spot.safety}%;background:#6ab8d4"></div></div><div class="score-val" style="color:#6ab8d4">${spot.safety}</div></div>
-          <div class="score-item"><div class="score-label">Celkem</div><div class="score-bar"><div class="score-fill" style="width:${spot.overall}%;background:${oc}"></div></div><div class="score-val" style="color:${oc}">${spot.overall}</div></div>
-        </div>
-        <div class="tags">${(spot.tags||[]).map(t=>`<span class="tag tag-green">${esc(t)}</span>`).join('')}</div>
-        ${spot.warning?`<div class="warning-box"><span>⚠</span><span>${esc(spot.warning)}</span></div>`:''}
-      `;
-      card.addEventListener('click',()=>{
-        document.querySelectorAll('.spot-card').forEach(c=>c.classList.remove('active'));
-        card.classList.add('active'); map.setView([spot.lat,spot.lng],13); m.openPopup();
-      });
-      list.appendChild(card);
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1800,messages:[{role:'user',content:prompt}]})
     });
-  }
+    if(r.status===401){delKey();alert('Neplatný klíč.');showModal();return;}
+    if(!r.ok){const e=await r.text();alert('Chyba API: '+r.status+'\n'+e);return;}
+    const d=await r.json();
+    const raw=d.content.map(b=>b.text||'').join('');
+    let spots;
+    try{spots=JSON.parse(raw.replace(/```json|```/g,'').trim());}
+    catch{alert('Chyba zpracování. Zkus znovu.');return;}
+    renderSpots(spots);
+    if(spots.length){
+      map.fitBounds(L.latLngBounds([...spots.map(s=>[s.lat,s.lng]),...waypoints.map(w=>[w.lat,w.lng])]),{padding:[60,60]});
+      if(mobile()) setSheet('half');
+    }
+  }catch(e){alert('Chyba: '+e.message);}
+  finally{document.getElementById('loading').classList.remove('on');}
+}
 
-  function esc(s){ if(!s)return''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// ── RENDER
+function renderSpots(spots){
+  const list=document.getElementById('spots-list'); list.innerHTML='';
+  const cnt=document.getElementById('spots-count'); cnt.textContent=spots.length+' míst'; cnt.style.display='block';
+
+  spots.forEach((s,i)=>{
+    const c=COLORS[i%COLORS.length];
+    const oc=s.overall>=75?'#7fd97f':s.overall>=55?'#e8b84b':'#e06060';
+    const ms=mobile()?36:26;
+
+    const m=L.marker([s.lat,s.lng],{icon:L.divIcon({className:'',html:`<div style="background:${c};color:#0b0e0c;width:${ms}px;height:${ms}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;border:2px solid rgba(11,14,12,0.8);box-shadow:0 3px 14px rgba(0,0,0,0.7);font-family:'Syne',sans-serif;">${i+1}</div>`,iconSize:[ms,ms],iconAnchor:[ms/2,ms/2]})}).addTo(map);
+    m.bindPopup(`<strong style="font-family:'Syne',sans-serif">${s.name}</strong><br><span style="color:#7fd97f">Celkem: ${s.overall}/100</span>`);
+    spotMarkers.push(m);
+
+    const card=document.createElement('div');
+    card.className='card';
+    card.innerHTML=`
+      <div class="card-head">
+        <div class="card-num" style="background:${c}18;color:${c};border:1.5px solid ${c}40">${i+1}</div>
+        <div class="card-name">${x(s.name)}</div>
+      </div>
+      <div class="card-desc">${x(s.description)}</div>
+      <div class="scores">
+        <div class="sc"><div class="sc-label">Soukromí</div><div class="sc-bar"><div class="sc-fill" style="width:${s.privacy}%;background:#7fd97f"></div></div><div class="sc-val" style="color:#7fd97f">${s.privacy}</div></div>
+        <div class="sc"><div class="sc-label">Bezpečnost</div><div class="sc-bar"><div class="sc-fill" style="width:${s.safety}%;background:#6ab8d4"></div></div><div class="sc-val" style="color:#6ab8d4">${s.safety}</div></div>
+        <div class="sc"><div class="sc-label">Celkem</div><div class="sc-bar"><div class="sc-fill" style="width:${s.overall}%;background:${oc}"></div></div><div class="sc-val" style="color:${oc}">${s.overall}</div></div>
+      </div>
+      <div class="tags">${(s.tags||[]).map(t=>`<span class="tag">${x(t)}</span>`).join('')}</div>
+      ${s.warning?`<div class="warn-box">⚠ ${x(s.warning)}</div>`:''}
+    `;
+    card.addEventListener('click',()=>{
+      document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+      card.classList.add('active'); map.setView([s.lat,s.lng],13); m.openPopup();
+      if(mobile()) setSheet('peek');
+    });
+    list.appendChild(card);
+  });
+}
+
+function x(s){ if(!s)return''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 </body>
 </html>
